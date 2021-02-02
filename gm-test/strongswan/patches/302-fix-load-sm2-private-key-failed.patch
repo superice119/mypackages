@@ -1,0 +1,37 @@
+diff --git a/src/libcharon/plugins/vici/vici_cred.c b/src/libcharon/plugins/vici/vici_cred.c
+index 038338805..fa4863395 100644
+--- a/src/libcharon/plugins/vici/vici_cred.c
++++ b/src/libcharon/plugins/vici/vici_cred.c
+@@ -233,6 +233,10 @@ CALLBACK(load_key, vici_message_t*,
+ 	{
+ 		type = KEY_BLISS;
+ 	}
++	else if (strcaseeq(str, "sm2"))
++	{
++		type = KEY_SM2;
++	}
+ 	else
+ 	{
+ 		return create_reply("invalid key type: %s", str);
+diff --git a/src/swanctl/commands/load_creds.c b/src/swanctl/commands/load_creds.c
+index 63a3bdcf8..39ab97527 100644
+--- a/src/swanctl/commands/load_creds.c
++++ b/src/swanctl/commands/load_creds.c
+@@ -209,6 +209,9 @@ static bool load_key_anytype(load_ctx_t *ctx, char *path,
+ 		case KEY_BLISS:
+ 			loaded = load_key(ctx, path, "bliss", encoding);
+ 			break;
++		case KEY_SM2:
++			loaded = load_key(ctx, path, "sm2", encoding);
++			break;
+ 		default:
+ 			fprintf(stderr, "unsupported key type in '%s'\n", path);
+ 			break;
+@@ -278,6 +281,7 @@ static bool determine_credtype(char *type, credential_type_t *credtype,
+ 		{ "ecdsa",			CRED_PRIVATE_KEY,		KEY_ECDSA,			},
+ 		{ "bliss",			CRED_PRIVATE_KEY,		KEY_BLISS,			},
+ 		{ "pkcs12",			CRED_CONTAINER,			CONTAINER_PKCS12,	},
++		{ "sm2", 			CRED_PRIVATE_KEY, 		KEY_SM2,			},
+ 	};
+ 	int i;
+ 

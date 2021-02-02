@@ -1,0 +1,11 @@
+config FM_CRYPTO_CARD_DRIVER
+	tristate "fisherman crypto card mini pcie driver"
+	#depends on GENERIC_GPIO
+	#select SPI_GPIO
+	help
+	  This is an SPI driver to register 1 to 6 char devices.
+	  The devices will be exposed to userspace as /dev/FM_CPC_DRV[0-5]
+	  
+	  This support is also available as a module.  If so, the module
+	  will be called FM_CPC_DRV.ko.
+.

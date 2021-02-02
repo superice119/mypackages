@@ -1,0 +1,25 @@
+Index: PcapPlusPlus-19.12/3rdParty/MemPlumber/MemPlumber/memplumber.cpp
+===================================================================
+--- PcapPlusPlus-19.12.orig/3rdParty/MemPlumber/MemPlumber/memplumber.cpp
++++ PcapPlusPlus-19.12/3rdParty/MemPlumber/MemPlumber/memplumber.cpp
+@@ -350,6 +350,7 @@ const char* getCaller() {
+     return "Unknown";
+ }
+ #else
++#if defined(__UCLIBC__) || defined(__GLIBC__)
+ #include <execinfo.h>
+ const char* getCaller() {
+     void* backtraceArr[3];
+@@ -368,6 +369,12 @@ const char* getCaller() {
+     // the caller is second in the backtrace
+     return backtraceSymbols[2];
+ }
++#else
++const char* getCaller() {
++    return "Unknown";
++}
++#endif
++
+ #endif
+ 
+ void* operator new(std::size_t size, const char* file, int line) {

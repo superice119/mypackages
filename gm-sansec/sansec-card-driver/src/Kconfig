@@ -1,0 +1,10 @@
+config SANSEC_CARD_DRIVER
+	tristate "sansec crypto card mini pcie driver"
+	#depends on GENERIC_GPIO
+	#select SPI_GPIO
+	help
+	  This is an PCI driver to register 1 to 6 char devices.
+	  
+	  This support is also available as a module.  If so, the module
+	  will be called swcsm40.ko.
+.

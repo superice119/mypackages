@@ -1,0 +1,1 @@
+obj-${CONFIG_SANSEC_CARD_DRIVER}	+= swcsm40.o

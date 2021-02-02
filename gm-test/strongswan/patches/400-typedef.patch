@@ -1,0 +1,13 @@
+Index: strongswan-5.7.0/src/libstrongswan/plugins/gmalg/gmalg/private_include/ecc.h
+===================================================================
+--- strongswan-5.7.0.orig/src/libstrongswan/plugins/gmalg/gmalg/private_include/ecc.h
++++ strongswan-5.7.0/src/libstrongswan/plugins/gmalg/gmalg/private_include/ecc.h
+@@ -3,6 +3,8 @@
+ 
+ #include "typedef.h"
+ 
++typedef u32 uint;
++
+ #define ECC_WORDSIZE 8
+ #define ECC_NUMBITS 256
+ #define ECC_NUMWORD (ECC_NUMBITS/ECC_WORDSIZE) //32

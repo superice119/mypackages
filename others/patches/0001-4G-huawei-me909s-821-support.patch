@@ -1,0 +1,248 @@
+From b3f677daf79702ab0469ad50c991e6b04b37ff99 Mon Sep 17 00:00:00 2001
+From: wangqi <wangqi@v-secure.com>
+Date: Wed, 26 Feb 2020 15:33:01 +0000
+Subject: [PATCH] 4G: huawei me909s-821 support
+
+---
+ config_R201i_4G                               | 16 ++---
+ package/base-files/files/bin/config_generate  | 40 +++++++++++++
+ package/base-files/files/etc/config/mwan3     | 58 +++++++++++++++++++
+ .../config/firewall/files/firewall.config     |  1 +
+ package/network/utils/comgt/files/ncm.sh      |  4 +-
+ .../ramips/base-files/etc/board.d/01_leds     |  1 +
+ 6 files changed, 112 insertions(+), 8 deletions(-)
+ create mode 100644 package/base-files/files/etc/config/mwan3
+
+diff --git a/config_R201i_4G b/config_R201i_4G
+index 33d8e1e0d2..15678093c7 100644
+--- a/config_R201i_4G
++++ b/config_R201i_4G
+@@ -1622,11 +1622,11 @@ CONFIG_PACKAGE_kmod-ipt-extra=y
+ # CONFIG_PACKAGE_kmod-ipt-hashlimit is not set
+ # CONFIG_PACKAGE_kmod-ipt-iface is not set
+ # CONFIG_PACKAGE_kmod-ipt-ipmark is not set
+-# CONFIG_PACKAGE_kmod-ipt-ipopt is not set
++CONFIG_PACKAGE_kmod-ipt-ipopt=y
+ # CONFIG_PACKAGE_kmod-ipt-ipp2p is not set
+ # CONFIG_PACKAGE_kmod-ipt-iprange is not set
+ # CONFIG_PACKAGE_kmod-ipt-ipsec is not set
+-# CONFIG_PACKAGE_kmod-ipt-ipset is not set
++CONFIG_PACKAGE_kmod-ipt-ipset=y
+ # CONFIG_PACKAGE_kmod-ipt-ipv4options is not set
+ # CONFIG_PACKAGE_kmod-ipt-led is not set
+ # CONFIG_PACKAGE_kmod-ipt-length2 is not set
+@@ -2476,8 +2476,10 @@ CONFIG_PACKAGE_nmap=y
+ # CONFIG_PACKAGE_igmpproxy is not set
+ # CONFIG_PACKAGE_ip-bridge is not set
+ # CONFIG_PACKAGE_ip-full is not set
++CONFIG_PACKAGE_ip-tiny=y
+ # CONFIG_PACKAGE_ip-tiny is not set
+ # CONFIG_PACKAGE_lldpd is not set
++CONFIG_PACKAGE_mwan3=y
+ # CONFIG_PACKAGE_nstat is not set
+ # CONFIG_PACKAGE_relayd is not set
+ # CONFIG_PACKAGE_ss is not set
+@@ -2553,9 +2555,9 @@ CONFIG_PACKAGE_nmap=y
+ # WWAN
+ #
+ CONFIG_PACKAGE_comgt=y
+-# CONFIG_PACKAGE_comgt-directip is not set
+-# CONFIG_PACKAGE_comgt-ncm is not set
+-# CONFIG_PACKAGE_uqmi is not set
++CONFIG_PACKAGE_comgt-directip=y
++CONFIG_PACKAGE_comgt-ncm=y
++CONFIG_PACKAGE_uqmi=y
+ 
+ #
+ # Web Servers/Proxies
+@@ -2579,7 +2581,7 @@ CONFIG_PACKAGE_hostapd-common=y
+ # CONFIG_PACKAGE_iperf is not set
+ # CONFIG_PACKAGE_iperf3 is not set
+ # CONFIG_PACKAGE_ipip is not set
+-# CONFIG_PACKAGE_ipset is not set
++CONFIG_PACKAGE_ipset=y
+ # CONFIG_PACKAGE_ipset-dns is not set
+ # CONFIG_PACKAGE_iputils-arping is not set
+ # CONFIG_PACKAGE_iputils-clockdiff is not set
+@@ -2743,7 +2745,7 @@ CONFIG_PACKAGE_ubi-utils=y
+ # CONFIG_PACKAGE_ugps is not set
+ CONFIG_PACKAGE_usb-modeswitch=y
+ # CONFIG_PACKAGE_usbreset is not set
+-# CONFIG_PACKAGE_usbutils is not set
++CONFIG_PACKAGE_usbutils=y
+ # CONFIG_PACKAGE_uuidd is not set
+ # CONFIG_PACKAGE_uuidgen is not set
+ # CONFIG_PACKAGE_whereis is not set
+diff --git a/package/base-files/files/bin/config_generate b/package/base-files/files/bin/config_generate
+index 15e5b53769..deff75eea0 100755
+--- a/package/base-files/files/bin/config_generate
++++ b/package/base-files/files/bin/config_generate
+@@ -55,6 +55,43 @@ generate_static_network() {
+ 	fi
+ }
+ 
++#config interface 'wan'
++#        option ifname 'eth0.2'
++#        option proto 'dhcp'
++#        option metric '10'
++#
++#config interface 'wwan'
++#        option proto 'ncm'
++#        option ifname 'usb0'
++#        option device '/dev/ttyUSB2'
++#        option apn 'ctlte'
++#        option username 'ctnet@mycdma.cn'
++#        option password 'vnet.mobi'
++#        option delay '10'
++#        option metric '20'
++
++generate_network_wwan() {
++
++	# add wwan
++	uci -q batch <<-EOF
++		delete network.wwan
++		set network.wwan='interface'
++		set network.wwan.ifname='usb0'
++		set network.wwan.proto='ncm'
++		set network.wwan.apn='ctlte'
++		set network.wwan.username='ctnet@mycdma.cn'
++		set network.wwan.password='vnet.mobi'
++		set network.wwan.delay='10'
++		set network.wwan.device='/dev/ttyUSB2'
++	EOF
++
++	# add metric for wan and wwan
++	uci -q batch <<-EOF
++		set network.wwan.metric='20'
++		set network.wan.metric='10'
++	EOF
++}
++
+ addr_offset=2
+ generate_network() {
+ 	local ifname macaddr protocol type ipaddr netmask
+@@ -430,8 +467,11 @@ if [ ! -s /etc/config/network ]; then
+ 	json_get_keys keys network
+ 	for key in $keys; do generate_network $key; done
+ 
++	generate_network_wwan 
++
+ 	json_get_keys keys switch
+ 	for key in $keys; do generate_switch $key; done
++
+ fi
+ 
+ if [ ! -s /etc/config/system ]; then
+diff --git a/package/base-files/files/etc/config/mwan3 b/package/base-files/files/etc/config/mwan3
+new file mode 100644
+index 0000000000..4cd04dd9b5
+--- /dev/null
++++ b/package/base-files/files/etc/config/mwan3
+@@ -0,0 +1,58 @@
++
++config globals 'globals'
++        option mmx_mask '0x3F00'
++        option local_source 'lan'
++
++config interface 'wan'
++        list track_ip '119.29.29.29'
++        list track_ip '182.254.116.116'
++        list track_ip '114.114.114.114'
++        list track_ip '114.114.114.115'
++        option enabled '1'
++        option reliability '1'
++        option count '1'
++        option timeout '2'
++        option interval '5'
++        option down '3'
++        option up '8'
++ 
++config interface 'wwan'
++        list track_ip '119.29.29.29'
++        list track_ip '182.254.116.116'
++        list track_ip '114.114.114.114'
++        list track_ip '114.114.114.115'
++        option enabled '1'
++        option reliability '1'
++        option count '1'
++        option timeout '2'
++        option interval '5'
++        option down '5'
++        option up '10'
++ 
++config policy 'wan_wwan'
++        list use_member 'wan_m1_w1'
++        list use_member 'wwan_m2_w2'
++        option last_resort 'unreachable'
++ 
++config policy 'wan_only'
++        list use_member 'wan_m1_w1'
++
++config policy 'wwan_only'
++        list use_member 'wwan_m2_w2'
++ 
++config member 'wan_m1_w1'
++        option interface 'wan'
++        option metric '1'
++        option weight '1'
++ 
++config member 'wwan_m2_w2'
++        option interface 'wwan'
++        option metric '2'
++        option weight '2'
++ 
++config rule 'default'
++        option proto 'all'
++        option sticky '0'
++        option use_policy 'wan_wwan'
++        option dest_ip '0.0.0.0/0'
++
+diff --git a/package/network/config/firewall/files/firewall.config b/package/network/config/firewall/files/firewall.config
+index 69396e3721..1fef1e3f92 100644
+--- a/package/network/config/firewall/files/firewall.config
++++ b/package/network/config/firewall/files/firewall.config
+@@ -17,6 +17,7 @@ config zone
+ 	option name		wan
+ 	list   network		'wan'
+ 	list   network		'wan6'
++	list   network		'wwan'
+ 	option input		REJECT
+ 	option output		ACCEPT
+ 	option forward		REJECT
+diff --git a/package/network/utils/comgt/files/ncm.sh b/package/network/utils/comgt/files/ncm.sh
+index 73d1e05e3f..c6f41a3527 100644
+--- a/package/network/utils/comgt/files/ncm.sh
++++ b/package/network/utils/comgt/files/ncm.sh
+@@ -73,7 +73,8 @@ proto_ncm_setup() {
+ 
+ 	[ -n "$delay" ] && sleep "$delay"
+ 
+-	manufacturer=`gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk 'NF && $0 !~ /AT\+CGMI/ { sub(/\+CGMI: /,""); print tolower($1); exit; }'`
++	#manufacturer=`gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk 'NF && $0 !~ /AT\+CGMI/ { sub(/\+CGMI: /,""); print tolower($1); exit; }'`
++	manufacturer=huawei
+ 	[ $? -ne 0 ] && {
+ 		echo "Failed to get modem information"
+ 		proto_notify_error "$interface" GETINFO_FAILED
+@@ -133,6 +134,7 @@ proto_ncm_setup() {
+ 	proto_send_update "$interface"
+ 
+ 	[ "$pdptype" = "IP" -o "$pdptype" = "IPV4V6" ] && {
++		route del default
+ 		json_init
+ 		json_add_string name "${interface}_4"
+ 		json_add_string ifname "@$interface"
+diff --git a/target/linux/ramips/base-files/etc/board.d/01_leds b/target/linux/ramips/base-files/etc/board.d/01_leds
+index 8e1cc6483f..96cda96408 100755
+--- a/target/linux/ramips/base-files/etc/board.d/01_leds
++++ b/target/linux/ramips/base-files/etc/board.d/01_leds
+@@ -244,6 +244,7 @@ tianqi-R201i)
+ 	ucidef_set_led_switch "lan2" "lan2" "$board:speed:p3" "switch0" "0x08"
+ 	ucidef_set_led_switch "lan3" "lan3" "$board:speed:p4" "switch0" "0x10"
+ 	ucidef_set_led_switch "wan" "wan" "$board:dual_model:status" "switch0" "0x01"
++	ucidef_set_led_netdev "wwan" "WWAN" "$board:4G:status" "usb0" "link"
+ 	;;
+ miwifi-mini)
+ 	ucidef_set_led_default "power" "power" "$board:red:status" "1"
+-- 
+2.17.1
+

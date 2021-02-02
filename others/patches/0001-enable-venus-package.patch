@@ -1,0 +1,25 @@
+From ef350d47a87ecce7dbc6e36bbf8e05e9a5d88db0 Mon Sep 17 00:00:00 2001
+From: wangqi <wangqi@v-secure.com>
+Date: Mon, 30 Sep 2019 05:48:41 +0000
+Subject: [PATCH 1/2] enable venus package
+
+---
+ config_tianqi_R201i | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/config_tianqi_R201i b/config_tianqi_R201i
+index 8f45458d2d..b9cf8624a4 100644
+--- a/config_tianqi_R201i
++++ b/config_tianqi_R201i
+@@ -4750,7 +4750,7 @@ CONFIG_PACKAGE_ubi-utils=y
+ # ToB
+ #
+ CONFIG_PACKAGE_forward-tool=y
+-#CONFIG_PACKAGE_venus=y
++CONFIG_PACKAGE_venus=y
+ # CONFIG_PACKAGE_venus-kmod is not set
+ CONFIG_PACKAGE_firminfo=y
+ 
+-- 
+2.17.1
+
